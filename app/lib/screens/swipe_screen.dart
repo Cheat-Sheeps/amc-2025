@@ -345,7 +345,38 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.shield, size: 14, color: _getTrustColor(trustScore)),
+                                              Icon(Icons.person, size: 14, color: _getTrustColor(trustScore)),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                ownerProfile?.displayName ?? 'User',
+                                                style: TextStyle(
+                                                  color: _getTrustColor(trustScore),
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.surface,
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: _getTrustColor(trustScore), width: 1),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: _getTrustColor(trustScore).withOpacity(0.3),
+                                                blurRadius: 8,
+                                                spreadRadius: 1,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.verified_user, size: 14, color: _getTrustColor(trustScore)),
                                               const SizedBox(width: 4),
                                               Text(
                                                 '${trustScore.toStringAsFixed(1)}',
