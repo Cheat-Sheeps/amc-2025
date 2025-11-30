@@ -218,6 +218,38 @@ class FirebaseService extends ChangeNotifier {
         .map((snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
   }
 
+  Future<void> acceptDeal(String matchId) async {
+    if (user == null) return;
+    final uid = user!.uid;
+    final matchRef = _firestore.collection('matches').doc(matchId);
+
+    await _firestore.runTransaction((transaction) async {
+      final matchDoc = await transaction.get(matchRef);
+      if (!matchDoc.exists) return;
+
+      final data = matchDoc.data() ?? {};
+      final acceptedBy = (data['acceptedBy'] as List<dynamic>?)?.cast<String>() ?? [];
+
+      if (!acceptedBy.contains(uid)) {
+        acceptedBy.add(uid);
+        transaction.update(matchRef, {'acceptedBy': acceptedBy});
+      }
+
+      if (acceptedBy.length >= 2) {
+        final itemId = data['itemId'] as String?;
+        final matchedItemId = data['matchedItemId'] as String?;
+
+        if (itemId != null) {
+          transaction.delete(_firestore.collection('items').doc(itemId));
+        }
+        if (matchedItemId != null) {
+          transaction.delete(_firestore.collection('items').doc(matchedItemId));
+        }
+        transaction.delete(matchRef);
+      }
+    });
+  }
+
   Future<void> updateUserLocation(Position position) async {
     if (user == null) return;
     await _firestore.collection('users').doc(user!.uid).update({

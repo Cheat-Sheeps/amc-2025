@@ -44,7 +44,7 @@ class MatchesScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.favorite_border, size: 80, color: Colors.grey[400]),
+                    Icon(Icons.handshake, size: 80, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     const Text(
                       'No matches yet',

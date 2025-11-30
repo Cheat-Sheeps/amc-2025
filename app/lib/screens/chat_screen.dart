@@ -30,6 +30,31 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  void _acceptDeal(FirebaseService service) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Accept Deal'),
+        content: const Text('Are you sure you want to accept this deal? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await service.acceptDeal(widget.matchId);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Deal accepted! Waiting for the other user.')),
+              );
+            },
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showRating() {
     showDialog(
@@ -98,7 +123,7 @@ class _ChatScreenState extends State<ChatScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.primary.withAlpha(77),
                 width: 1,
               ),
             ),
@@ -158,7 +183,7 @@ class _ChatScreenState extends State<ChatScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.primary.withAlpha(77),
               width: 2,
             ),
           ),
@@ -204,7 +229,7 @@ class _ChatScreenState extends State<ChatScreen> {
           owner,
           style: TextStyle(
             fontSize: 10,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.primary.withAlpha(178),
           ),
         ),
       ],
@@ -214,88 +239,50 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final service = Provider.of<FirebaseService>(context, listen: false);
-    final currentUser = ChatUser(
-      id: service.user?.uid ?? 'unknown',
-      firstName: 'You',
-    );
-    final otherUser = ChatUser(
-      id: widget.otherUserId,
-      firstName: widget.otherUserName,
-    );
+    final currentUser = ChatUser(id: service.user!.uid);
+    final otherUser = ChatUser(id: widget.otherUserId, firstName: widget.otherUserName);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        // WRAP THE TITLE IN INKWELL
-        title: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OtherUserProfileScreen(
-                  userId: widget.otherUserId,
-                  userName: widget.otherUserName,
-                  trustScore: widget.trustScore,
-                ),
+        title: GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OtherUserProfileScreen(
+                userId: widget.otherUserId,
+                userName: widget.otherUserName,
+                trustScore: widget.trustScore,
               ),
-            );
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Text(
-                    '> ${widget.otherUserName.toUpperCase()}',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 16,
-                      letterSpacing: 1,
-                      decoration: TextDecoration.underline, // Visual cue that it is clickable
-                      decorationColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_outward, size: 14, color: Theme.of(context).colorScheme.primary.withOpacity(0.5))
-                ],
-              ),
-              Row(
-                children: [
-                  Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.secondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${widget.trustScore.toStringAsFixed(1)} TRUST',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
+              const Icon(Icons.person),
+              const SizedBox(width: 8),
+              Text(widget.otherUserName),
             ],
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.rate_review, color: Theme.of(context).colorScheme.primary),
-            tooltip: 'Rate User',
+            icon: const Icon(Icons.handshake),
+            onPressed: () => _acceptDeal(service),
+          ),
+          IconButton(
+            icon: const Icon(Icons.star),
             onPressed: _showRating,
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
-          children: [
-            // Hide matched items header when keyboard is visible
-            if (MediaQuery.of(context).viewInsets.bottom == 0)
-              _buildMatchedItemsHeader(service),
-            Expanded(
-              child: StreamBuilder<List<model.ChatMessage>>(
-                stream: service.streamMessages(widget.matchId),
-                builder: (context, snapshot) {
+      body: Column(
+        children: [
+          // Hide matched items header when keyboard is visible
+          if (MediaQuery.of(context).viewInsets.bottom == 0)
+            _buildMatchedItemsHeader(service),
+          Expanded(
+            child: StreamBuilder<List<model.ChatMessage>>(
+              stream: service.streamMessages(widget.matchId),
+              builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
@@ -304,7 +291,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   );
                 }
-                
+
                 final messages = (snapshot.data ?? []).map((msg) {
                   return ChatMessage(
                     user: msg.senderId == currentUser.id ? currentUser : otherUser,
@@ -331,7 +318,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     inputDecoration: InputDecoration(
                       hintText: '> TYPE MESSAGE...',
                       hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.primary.withAlpha(128),
                         letterSpacing: 1,
                       ),
                       border: OutlineInputBorder(
@@ -343,7 +330,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.primary.withAlpha(77),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -374,6 +361,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-    ));
+    );
   }
 }
