@@ -70,7 +70,7 @@ class SeedService {
         {
           'title': 'Mysterious Pills',
           'description': 'This is your last chance. After this, there is no turning back.',
-          'imageUrl': 'https://cdn.discordapp.com/attachments/1411465635803828266/1444709437674618880/Generated_Image_November_29_2025_-_7_40PM.png?ex=692db203&is=692c6083&hm=a58dbf97de69c15dce1c40dd04b4ffc4296ccda52c0bb784e4366b452af7b043',
+          'imageUrl': 'https://media.discordapp.net/attachments/1411465635803828266/1444709437674618880/Generated_Image_November_29_2025_-_7_40PM.png?ex=692db203&is=692c6083&hm=a58dbf97de69c15dce1c40dd04b4ffc4296ccda52c0bb784e4366b452af7b043&=&format=webp&quality=lossless&width=803&height=803',
           'ownerId': 'seed_user_1',
           'latitude': 45.5017 + (0.01),
           'longitude': -73.5673 + (0.01),
