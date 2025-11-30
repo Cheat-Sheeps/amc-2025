@@ -57,6 +57,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -99,3 +100,23 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_native_splash:
+  # Pip-Boy green color theme
+  color: "#0A0E0A"
+  color_dark: "#0A0E0A"
+  
+  # You can add an image here if you create one
+  # image: assets/splash.png
+  
+  # Or use text/icon instead
+  # For now, just use the background color
+  android_12:
+    color: "#0A0E0A"
+    # image: assets/splash_android12.png
+  
+  # iOS specific
+  ios_content_mode: center
+  
+  # Web support
+  web: true

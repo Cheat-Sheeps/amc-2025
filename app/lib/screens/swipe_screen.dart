@@ -22,6 +22,15 @@ class _SwipeScreenState extends State<SwipeScreen> {
     return Colors.red;
   }
 
+  void _preloadImages(List<Item> items, BuildContext context) {
+    // Preload the next 3 images
+    for (int i = 0; i < items.length && i < 3; i++) {
+      if (items[i].imageUrl != null) {
+        precacheImage(NetworkImage(items[i].imageUrl!), context);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final service = Provider.of<FirebaseService>(context, listen: false);
@@ -67,6 +76,12 @@ class _SwipeScreenState extends State<SwipeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final items = snapshot.data ?? [];
+          
+          // Preload images when items are loaded
+          if (items.isNotEmpty) {
+            _preloadImages(items, context);
+          }
+          
           if (items.isEmpty) {
             return Center(
               child: Padding(
@@ -90,7 +105,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
           }
 
           return Column(
-            children: [Flexible(child: Center(child: cardSwiper(items, service, context)))],
+            children: [Expanded(child: Center(child: cardSwiper(items, service, context)))],
           );
         },
       ),
@@ -101,7 +116,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           _buildActionButton(
             icon: Icons.close,
@@ -193,11 +207,22 @@ class _SwipeScreenState extends State<SwipeScreen> {
           final item = items[previousIndex];
           service.likeItem(item.id ?? '');
         }
+        
+        // Preload next images after swiping
+        if (currentIndex != null && currentIndex < items.length) {
+          final nextIndex = currentIndex + 2; // Preload 2 ahead
+          if (nextIndex < items.length && items[nextIndex].imageUrl != null) {
+            precacheImage(NetworkImage(items[nextIndex].imageUrl!), context);
+          }
+        }
+        
         return true;
       },
       cardBuilder: (context, index, percentThresholdX, percentThresholdY) {
         final item = items[index];
+        // Use a keyed FutureBuilder to prevent rebuilding on swipe
         return FutureBuilder(
+          key: ValueKey(item.id),
           future: Future.wait([service.getUserProfile(item.ownerId), service.getUserProfile(service.user?.uid ?? '')]),
           builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
             final ownerProfile = snapshot.data?[0];
@@ -287,10 +312,12 @@ class _SwipeScreenState extends State<SwipeScreen> {
                           left: 16,
                           right: 16,
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Flexible(
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       item.title,

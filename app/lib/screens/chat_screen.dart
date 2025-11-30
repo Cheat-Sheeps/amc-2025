@@ -296,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   messageOptions: MessageOptions(
                     currentUserContainerColor: Theme.of(context).colorScheme.primary,
                     containerColor: Theme.of(context).colorScheme.surface,
-                    textColor: Theme.of(context).scaffoldBackgroundColor,
+                    textColor: Theme.of(context).colorScheme.primary,
                     currentUserTextColor: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: 12,
                     messagePadding: const EdgeInsets.all(12),
@@ -334,6 +334,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     inputTextStyle: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                     ),
+                    sendOnEnter: true,
                     sendButtonBuilder: (onSend) {
                       return IconButton(
                         icon: Icon(Icons.send, color: Theme.of(context).colorScheme.secondary),

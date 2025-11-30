@@ -15,6 +15,11 @@ class FirebaseService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  
+  // Cache for user profiles
+  final Map<String, UserProfile> _profileCache = {};
+  final Map<String, DateTime> _profileCacheTime = {};
+  static const _cacheExpiration = Duration(minutes: 5);
 
   User? get user => _auth.currentUser;
 
@@ -209,13 +214,34 @@ class FirebaseService extends ChangeNotifier {
 
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
+      // Check if we have a valid cached profile
+      final cachedTime = _profileCacheTime[userId];
+      if (cachedTime != null && 
+          DateTime.now().difference(cachedTime) < _cacheExpiration &&
+          _profileCache.containsKey(userId)) {
+        return _profileCache[userId];
+      }
+      
+      // Fetch from Firestore
       final doc = await _firestore.collection('users').doc(userId).get();
       if (!doc.exists) return null;
-      return UserProfile.fromMap(doc.id, doc.data() ?? {});
+      
+      final profile = UserProfile.fromMap(doc.id, doc.data() ?? {});
+      
+      // Cache the profile
+      _profileCache[userId] = profile;
+      _profileCacheTime[userId] = DateTime.now();
+      
+      return profile;
     } catch (e) {
       if (kDebugMode) print('Error getting user profile: $e');
       return null;
     }
+  }
+  
+  void clearProfileCache() {
+    _profileCache.clear();
+    _profileCacheTime.clear();
   }
 
   Future<void> signOut() async {
