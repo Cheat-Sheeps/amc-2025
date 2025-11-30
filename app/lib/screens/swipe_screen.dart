@@ -3,6 +3,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:math' as math;
 
 import '../models/item.dart';
 import '../services/firebase_service.dart';
@@ -60,8 +61,13 @@ class _SwipeScreenState extends State<SwipeScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
+        // increase toolbar height to avoid clipping of a large title
+        toolbarHeight: 64,
         title: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 12),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -202,6 +208,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
       threshold: thresholdPercent,
       controller: controller,
       cardsCount: items.length,
+      numberOfCardsDisplayed: math.min(items.length, 3),
       allowedSwipeDirection: AllowedSwipeDirection.only(left: true, right: true),
       onSwipe: (previousIndex, currentIndex, direction) async {
         // Trigger haptic feedback only on supported platforms

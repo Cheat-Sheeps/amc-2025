@@ -19,9 +19,9 @@ class MyListingsScreen extends StatelessWidget {
             Icon(Icons.inventory, color: Theme.of(context).colorScheme.primary, size: 28),
             const SizedBox(width: 12),
             Text(
-              'My Stash',
+              'My listings',
               style: TextStyle(
-                fontSize: 32,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.primary,
               ),

@@ -330,11 +330,11 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Matches',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
+            icon: Icon(Icons.sell),
             label: 'My Listings',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
+            icon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
