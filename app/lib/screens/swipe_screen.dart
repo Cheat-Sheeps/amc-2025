@@ -457,7 +457,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                                                child: Row(
                                                  mainAxisSize: MainAxisSize.min,
                                                  children: [
-                                                   Icon(trustScore > 3.0 ? Icons.verified_user : Icons.shield, size: 14, color: _getTrustColor(trustScore)),
+                                                   Icon(trustScore >= 8.0 ? Icons.verified_user : Icons.shield, size: 14, color: _getTrustColor(trustScore)),
                                                    const SizedBox(width: 4),
                                                    Text(
                                                      '${trustScore.toStringAsFixed(1)}',
