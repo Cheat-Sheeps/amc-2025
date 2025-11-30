@@ -5,6 +5,8 @@ import 'package:dash_chat_2/dash_chat_2.dart';
 import '../services/firebase_service.dart';
 import '../models/chat_message.dart' as model;
 
+import 'other_user_profile_screen.dart'; 
+
 class ChatScreen extends StatefulWidget {
   final String matchId;
   final String otherUserId;
@@ -225,32 +227,55 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '> ${widget.otherUserName.toUpperCase()}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: 16,
-                letterSpacing: 1,
-              ),
-            ),
-            Row(
-              children: [
-                Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.secondary),
-                const SizedBox(width: 4),
-                Text(
-                  '${widget.trustScore.toStringAsFixed(1)} TRUST',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                    letterSpacing: 1,
-                  ),
+        // WRAP THE TITLE IN INKWELL
+        title: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OtherUserProfileScreen(
+                  userId: widget.otherUserId,
+                  userName: widget.otherUserName,
+                  trustScore: widget.trustScore,
                 ),
-              ],
-            ),
-          ],
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    '> ${widget.otherUserName.toUpperCase()}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontSize: 16,
+                      letterSpacing: 1,
+                      decoration: TextDecoration.underline, // Visual cue that it is clickable
+                      decorationColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_outward, size: 14, color: Theme.of(context).colorScheme.primary.withOpacity(0.5))
+                ],
+              ),
+              Row(
+                children: [
+                  Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.secondary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${widget.trustScore.toStringAsFixed(1)} TRUST',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
