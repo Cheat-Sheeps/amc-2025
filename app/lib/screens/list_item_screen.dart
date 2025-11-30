@@ -122,20 +122,26 @@ class _ListItemScreenState extends State<ListItemScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Create Listing',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          children: [
+            Icon(Icons.post_add, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(
+              'Create listing',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
+          icon: Icon(Icons.close, color: theme.colorScheme.primary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -154,10 +160,10 @@ class _ListItemScreenState extends State<ListItemScreen> {
                     width: double.infinity,
                     height: 250,
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.grey[300]!,
+                        color: theme.colorScheme.primary.withAlpha(77),
                         width: 2,
                         style: BorderStyle.solid,
                       ),
@@ -169,7 +175,7 @@ class _ListItemScreenState extends State<ListItemScreen> {
                               Icon(
                                 Icons.add_photo_alternate_outlined,
                                 size: 64,
-                                color: Colors.grey[400],
+                                color: theme.colorScheme.primary.withAlpha(128),
                               ),
                               const SizedBox(height: 12),
                               Text(
@@ -177,7 +183,7 @@ class _ListItemScreenState extends State<ListItemScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey[600],
+                                  color: theme.colorScheme.primary,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -185,7 +191,7 @@ class _ListItemScreenState extends State<ListItemScreen> {
                                 'Tap to upload',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[500],
+                                  color: theme.colorScheme.primary.withAlpha(180),
                                 ),
                               ),
                             ],
@@ -244,113 +250,73 @@ class _ListItemScreenState extends State<ListItemScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Title Field
-                Text(
-                  'Title',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleCtl,
+                  style: TextStyle(color: theme.colorScheme.primary),
                   decoration: InputDecoration(
-                    hintText: 'e.g., Water Purification Kit',
-                    filled: true,
-                    fillColor: Colors.grey[50],
+                    labelText: 'Title',
+                    labelStyle: TextStyle(color: theme.colorScheme.secondary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: theme.colorScheme.primary.withAlpha(77)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 2),
+                      borderSide: BorderSide(color: theme.colorScheme.secondary, width: 2),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Title is required' : null,
-                  textCapitalization: TextCapitalization.words,
+                  validator: (v) => v!.trim().isEmpty ? 'Title is required' : null,
                 ),
                 const SizedBox(height: 20),
-
-                // Description Field
-                Text(
-                  'Description',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 8),
                 TextFormField(
                   controller: _descCtl,
+                  style: TextStyle(color: theme.colorScheme.primary),
                   decoration: InputDecoration(
-                    hintText: 'Describe your item, its condition, and what you\'re looking for...',
-                    filled: true,
-                    fillColor: Colors.grey[50],
+                    labelText: 'Description',
+                    labelStyle: TextStyle(color: theme.colorScheme.secondary),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: theme.colorScheme.primary.withAlpha(77)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFFF6B6B), width: 2),
+                      borderSide: BorderSide(color: theme.colorScheme.secondary, width: 2),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
-                  maxLines: 5,
-                  minLines: 3,
-                  textCapitalization: TextCapitalization.sentences,
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Description is required' : null,
+                  maxLines: 4,
+                  validator: (v) => v!.trim().isEmpty ? 'Description is required' : null,
                 ),
                 const SizedBox(height: 32),
-
-                // Publish Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: _saving ? null : _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6B6B),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      disabledBackgroundColor: Colors.grey[300],
-                    ),
-                    child: _saving
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text(
-                            'Publish Listing',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                // Save Button
+                _saving
+                    ? const Center(child: CircularProgressIndicator())
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _save,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: theme.colorScheme.secondary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                          child: Text(
+                            'Create Listing',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: theme.scaffoldBackgroundColor,
+                            ),
+                          ),
+                        ),
+                      ),
               ],
             ),
           ),
