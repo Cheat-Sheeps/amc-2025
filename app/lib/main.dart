@@ -15,6 +15,7 @@ import 'screens/my_listings_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/chat_screen.dart';
 import 'models/chat_message.dart';
+import 'package:geolocator/geolocator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -198,8 +199,12 @@ class _MainNavigationState extends State<MainNavigation> {
     // Setup listeners after frame to ensure Provider is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotificationListeners();
+      _updateUserLocation();
     });
   }
+
+
+
 
   @override
   void dispose() {
@@ -210,6 +215,46 @@ class _MainNavigationState extends State<MainNavigation> {
     super.dispose();
   }
 
+  Future<void> _updateUserLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator. isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('Location services are disabled.');
+        return;
+      }
+
+      // Check and request permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          debugPrint('Location permission denied.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('Location permission permanently denied.');
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+
+      // Update in Firebase
+      if (mounted) {
+        final service = Provider.of<FirebaseService>(context, listen: false);
+        await service. updateUserLocation(position);
+        debugPrint('Location updated: ${position.latitude}, ${position.longitude}');
+      }
+    } catch (e) {
+      // Silently fail - location is optional
+      debugPrint('Could not update location: $e');
+    }
+  }
   void _setupNotificationListeners() {
     final service = Provider.of<FirebaseService>(context, listen: false);
 
