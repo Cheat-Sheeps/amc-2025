@@ -15,6 +15,8 @@ import 'screens/my_listings_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/chat_screen.dart';
 import 'models/chat_message.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +46,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           brightness: Brightness.dark,
           scaffoldBackgroundColor: const Color(0xFF0A0E0A),
-          fontFamily: GoogleFonts.jetBrainsMono().fontFamily,
+          fontFamily: GoogleFonts.roboto().fontFamily,
           colorScheme: ColorScheme.dark(
             primary: const Color(0xFF00FF41),
             secondary: const Color(0xFF39FF14),
@@ -52,22 +54,27 @@ class MyApp extends StatelessWidget {
             background: const Color(0xFF0A0E0A),
             error: const Color(0xFFFF4444),
           ),
-          textTheme: GoogleFonts.jetBrainsMonoTextTheme(ThemeData.dark().textTheme).copyWith(
-            bodyLarge: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
-            bodyMedium: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
-            bodySmall: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
+          textTheme: GoogleFonts.robotoTextTheme(ThemeData.dark().textTheme).copyWith(
+            // Body text uses Roboto for readability
+            bodyLarge: GoogleFonts.roboto(color: const Color(0xFF00FF41)),
+            bodyMedium: GoogleFonts.roboto(color: const Color(0xFF00FF41)),
+            bodySmall: GoogleFonts.roboto(color: const Color(0xFF00FF41)),
+            // Display styles use JetBrains Mono
             displayLarge: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
             displayMedium: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
             displaySmall: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
+            // Headlines use JetBrains Mono
             headlineLarge: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
             headlineMedium: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
             headlineSmall: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
+            // Titles use JetBrains Mono
             titleLarge: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
             titleMedium: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
             titleSmall: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
-            labelLarge: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
-            labelMedium: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
-            labelSmall: GoogleFonts.jetBrainsMono(color: const Color(0xFF00FF41)),
+            // Labels use Roboto for readability
+            labelLarge: GoogleFonts.roboto(color: const Color(0xFF00FF41)),
+            labelMedium: GoogleFonts.roboto(color: const Color(0xFF00FF41)),
+            labelSmall: GoogleFonts.roboto(color: const Color(0xFF00FF41)),
           ),
           cardTheme: const CardThemeData(
             color: Color(0xFF1A251A),
@@ -193,6 +200,7 @@ class _MainNavigationState extends State<MainNavigation> {
     // Setup listeners after frame to ensure Provider is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupNotificationListeners();
+      _updateUserLocation();
     });
   }
 
@@ -203,6 +211,47 @@ class _MainNavigationState extends State<MainNavigation> {
       sub.cancel();
     }
     super.dispose();
+  }
+
+  Future<void> _updateUserLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator. isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('Location services are disabled.');
+        return;
+      }
+
+      // Check and request permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          debugPrint('Location permission denied.');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('Location permission permanently denied.');
+        return;
+      }
+
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      );
+
+      // Update in Firebase
+      if (mounted) {
+        final service = Provider.of<FirebaseService>(context, listen: false);
+        await service. updateUserLocation(position);
+        debugPrint('Location updated: ${position.latitude}, ${position.longitude}');
+      }
+    } catch (e) {
+      // Silently fail - location is optional
+      debugPrint('Could not update location: $e');
+    }
   }
 
   void _setupNotificationListeners() {
@@ -330,11 +379,11 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Matches',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
+            icon: Icon(Icons.sell),
             label: 'My Listings',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
+            icon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
