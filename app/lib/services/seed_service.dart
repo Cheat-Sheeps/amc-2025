@@ -68,9 +68,9 @@ class SeedService {
       // Sample items for apocalypse bartering scenario with random locations
       final items = [
         {
-          'title': 'Personal survival trainer',
-          'description': 'This man knows everything there is to know about survival',
-          'imageUrl': 'https://media.discordapp.net/attachments/1411465635803828266/1444478065437708479/20251129_131004.jpg?ex=692cda87&is=692b8907&hm=4a33530e92968d68734dbea844997bcd6a7b53549944de18ed8732542530a528&=&format=webp&width=603&height=804',
+          'title': 'Mysterious Pills',
+          'description': 'This is your last chance. After this, there is no turning back.',
+          'imageUrl': 'https://cdn.discordapp.com/attachments/1411465635803828266/1444709437674618880/Generated_Image_November_29_2025_-_7_40PM.png?ex=692db203&is=692c6083&hm=a58dbf97de69c15dce1c40dd04b4ffc4296ccda52c0bb784e4366b452af7b043',
           'ownerId': 'seed_user_1',
           'latitude': 45.5017 + (0.01),
           'longitude': -73.5673 + (0.01),
@@ -97,7 +97,7 @@ class SeedService {
         {
           'title': 'multi-tool knife',
           'description': 'high quality swiss knife w accessories, a bit dull but u can sharpen it easy',
-          'imageUrl': 'https://s3.amazonaws.com/images.gearjunkie.com/uploads/2022/01/Best-Multitools.jpg',
+          'imageUrl': 'https://7gadgets.com/wp-content/uploads/2020/02/Victorinox-Swiss-Army-Multi-Tool.jpg',
           'ownerId': 'seed_user_1',
           'latitude': 45.5017 + (0.003),
           'longitude': -73.5673 + (0.003),
@@ -142,7 +142,7 @@ class SeedService {
         {
           'title': 'Crowbar',
           'description': 'the tool of choice for a freeman',
-          'imageUrl': 'https://i.etsystatic.com/23047119/r/il/7f871e/2310961996/il_fullxfull.2310961996_4qjp.jpg',
+          'imageUrl': 'https://facts.net/wp-content/uploads/2024/01/7-best-crowbar-1706505919.jpg',
           'ownerId': 'seed_user_3',
           'latitude': 45.4980 - (0.002),
           'longitude': -73.5780 + (0.004),
@@ -168,7 +168,7 @@ class SeedService {
         },
         {
           'title': 'Rope',
-          'description': 'not sure id trust it for climbing but should be sturdy enough to hang yourself lol',
+          'description': 'not sure id trust it for climbing but should be sturdy enough for most tasks',
           'imageUrl': 'https://tse4.mm.bing.net/th/id/OIP.-XORoJ-wQ0tm4YoOmgV0YgHaFx?rs=1&pid=ImgDetMain&o=7&rm=3',
           'ownerId': 'seed_user_3',
           'latitude': 45.4980 + (0.004),
@@ -214,7 +214,7 @@ class SeedService {
         {
           'title': 'Heavy-duty Flashlight',
           'description': 'brighter than you',
-          'imageUrl': 'https://thumbs.worthpoint.com/zoom/images1/1/1212/29/vintage-john-deere-logo-heavy-duty_1_6f0ce622e059d761a5da02fb1fe6b8fe.jpg',
+          'imageUrl': 'https://tse1.mm.bing.net/th/id/OIP.LINYOw-O5xrhvYUsxkhOcgHaHa?rs=1&pid=ImgDetMain&o=7&rm=3',
           'ownerId': 'seed_user_2',
           'latitude': 45.5088 - (0.004),
           'longitude': -73.5878 + (0.003),
@@ -223,7 +223,7 @@ class SeedService {
         {
           'title': 'Gasoline generator',
           'description': 'climate change isnt much of an issue anymore since 90% of us are dead so dont feel too bad',
-          'imageUrl': 'https://www.bisonindustry.com/wp-content/uploads/2024/03/portable-gasoline-generator-set-5.jpg',
+          'imageUrl': 'https://image.made-in-china.com/2f0j00dsaTEqDLhnoV/Portable-4-Stroke-Gasoline-Generator-1kw-Honda-Style.jpg',
           'ownerId': 'seed_user_3',
           'latitude': 45.4980 + (0.002),
           'longitude': -73.5780 - (0.006),
