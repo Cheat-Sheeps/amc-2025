@@ -237,23 +237,33 @@ class FirebaseService extends ChangeNotifier {
 
   Future<void> sendMessage(String matchId, String text) async {
     if (user == null || text.trim().isEmpty) return;
-    final message = ChatMessage(
-      id: '',
-      matchId: matchId,
-      senderId: user!.uid,
-      text: text.trim(),
-      timestamp: DateTime.now(),
-    );
-    await _firestore.collection('messages').add(message.toMap());
+    try {
+      final message = ChatMessage(
+        id: '',
+        matchId: matchId,
+        senderId: user!.uid,
+        text: text.trim(),
+        timestamp: DateTime.now(),
+      );
+      await _firestore.collection('messages').add(message.toMap());
+      if (kDebugMode) print('Message sent successfully');
+    } catch (e) {
+      if (kDebugMode) print('Error sending message: $e');
+      rethrow;
+    }
   }
 
   Stream<List<ChatMessage>> streamMessages(String matchId) {
     return _firestore
         .collection('messages')
         .where('matchId', isEqualTo: matchId)
-        .orderBy('timestamp', descending: false)
         .snapshots()
-        .map((snap) => snap.docs.map((d) => ChatMessage.fromDoc(d)).toList());
+        .map((snap) {
+          final messages = snap.docs.map((d) => ChatMessage.fromDoc(d)).toList();
+          // Sort in memory instead of requiring a Firestore index
+          messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          return messages;
+        });
   }
 
   double? calculateDistance(double? lat1, double? lon1, double? lat2, double? lon2) {

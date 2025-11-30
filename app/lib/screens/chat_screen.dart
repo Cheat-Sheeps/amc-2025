@@ -266,6 +266,15 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder<List<model.ChatMessage>>(
               stream: service.streamMessages(widget.matchId),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error loading messages: ${snapshot.error}',
+                      style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                    ),
+                  );
+                }
+                
                 final messages = (snapshot.data ?? []).map((msg) {
                   return ChatMessage(
                     user: msg.senderId == currentUser.id ? currentUser : otherUser,
@@ -283,7 +292,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   messageOptions: MessageOptions(
                     currentUserContainerColor: Theme.of(context).colorScheme.primary,
                     containerColor: Theme.of(context).colorScheme.surface,
-                    textColor: Theme.of(context).colorScheme.primary,
+                    textColor: Theme.of(context).scaffoldBackgroundColor,
+                    currentUserTextColor: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: 12,
                     messagePadding: const EdgeInsets.all(12),
                   ),
