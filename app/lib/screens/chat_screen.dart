@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dash_chat_2/dash_chat_2.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/firebase_service.dart';
 import '../models/chat_message.dart' as model;
@@ -45,9 +46,6 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () async {
               await service.acceptDeal(widget.matchId);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Deal accepted! Waiting for the other user.')),
-              );
             },
             child: const Text('Accept'),
           ),
@@ -264,6 +262,48 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         actions: [
+          StreamBuilder<DocumentSnapshot>(
+            stream: service.streamMatch(widget.matchId),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const SizedBox.shrink();
+              }
+
+              final matchData = snapshot.data!.data() as Map<String, dynamic>?;
+              if (matchData == null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Deal completed! Offer and item for sale delisted.'),
+                      ),
+                    );
+                  }
+                });
+                return const SizedBox.shrink();
+              }
+
+              final acceptedBy = (matchData['acceptedBy'] as List<dynamic>?)?.cast<String>() ?? [];
+              final currentUserAccepted = acceptedBy.contains(service.user!.uid);
+              final otherUserAccepted = acceptedBy.contains(widget.otherUserId);
+
+              return Row(
+                children: [
+                  Icon(
+                    currentUserAccepted ? Icons.check_circle : Icons.check_circle_outline,
+                    color: currentUserAccepted ? Colors.green : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    otherUserAccepted ? Icons.check_circle : Icons.check_circle_outline,
+                    color: otherUserAccepted ? Colors.green : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.handshake),
             onPressed: () => _acceptDeal(service),

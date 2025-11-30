@@ -218,6 +218,10 @@ class FirebaseService extends ChangeNotifier {
         .map((snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
   }
 
+  Stream<DocumentSnapshot> streamMatch(String matchId) {
+    return _firestore.collection('matches').doc(matchId).snapshots();
+  }
+
   Future<void> acceptDeal(String matchId) async {
     if (user == null) return;
     final uid = user!.uid;
