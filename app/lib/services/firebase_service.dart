@@ -24,9 +24,29 @@ class FirebaseService extends ChangeNotifier {
       final cred = await _auth.signInAnonymously();
       final uid = cred.user?.uid;
       if (uid != null) {
+        // Create user profile
         await _firestore.collection('users').doc(uid).set({
           'createdAt': FieldValue.serverTimestamp(),
+          'displayName': 'Survivor',
+          'trustScore': 5.0,
+          'completedTrades': 0,
+          'totalRatings': 0,
+          'latitude': 45.5017,
+          'longitude': -73.5673,
         }, SetOptions(merge: true));
+        
+        // Create a starter item for the new user
+        await _firestore.collection('items').add({
+          'title': 'Water Bottle',
+          'description': 'Essential for survival. Half full.',
+          'imageUrl': 'https://picsum.photos/800/600?random=999',
+          'ownerId': uid,
+          'latitude': 45.5017,
+          'longitude': -73.5673,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        
+        if (kDebugMode) print('Created new user with starter item');
         notifyListeners();
         return true;
       }
@@ -42,9 +62,26 @@ class FirebaseService extends ChangeNotifier {
   }
 
   Stream<List<Item>> streamItems() {
+    if (user == null) return Stream.value([]);
+    final uid = user!.uid;
     return _firestore.collection('items').snapshots().map((snap) {
-      return snap.docs.map((d) => Item.fromDoc(d)).toList();
+      // Filter out current user's own items
+      return snap.docs
+          .where((d) => d.data()['ownerId'] != uid)
+          .map((d) => Item.fromDoc(d))
+          .toList();
     });
+  }
+
+  Future<Map<String, dynamic>?> getItem(String itemId) async {
+    try {
+      final doc = await _firestore.collection('items').doc(itemId).get();
+      if (!doc.exists) return null;
+      return {'id': doc.id, ...doc.data() ?? {}};
+    } catch (e) {
+      if (kDebugMode) print('Error getting item: $e');
+      return null;
+    }
   }
 
   Stream<List<Item>> streamUserItems() {
@@ -72,7 +109,22 @@ class FirebaseService extends ChangeNotifier {
   }
 
   Future<void> createItem(Item item) async {
-    await _firestore.collection('items').add(item.toMap());
+    final docRef = await _firestore.collection('items').add(item.toMap());
+    final newItemId = docRef.id;
+    
+    // Have seed users automatically like new items for instant matches
+    final batch = _firestore.batch();
+    for (final seedUser in ['seed_user_1', 'seed_user_2', 'seed_user_3']) {
+      final likeRef = _firestore.collection('likes').doc();
+      batch.set(likeRef, {
+        'itemId': newItemId,
+        'userId': seedUser,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+    await batch.commit();
+    
+    if (kDebugMode) print('Created item with auto-likes from seed users');
   }
 
   Future<void> deleteItem(String itemId) async {
@@ -98,27 +150,38 @@ class FirebaseService extends ChangeNotifier {
     final itemOwnerId = itemDoc.data()?['ownerId'];
     if (itemOwnerId == null || itemOwnerId == uid) return;
 
-    // Check if the item owner has liked any of current user's items
+    // Check if the item owner has liked any of the current user's items
     final myItems = await _firestore.collection('items').where('ownerId', isEqualTo: uid).get();
     final myItemIds = myItems.docs.map((d) => d.id).toList();
     
-    if (myItemIds.isEmpty) return;
+    if (myItemIds.isEmpty) {
+      if (kDebugMode) print('No items owned by current user, cannot create match');
+      return;
+    }
+    
+    if (kDebugMode) print('Checking if $itemOwnerId liked any of my ${myItemIds.length} items: $myItemIds');
 
     final ownerLikes = await _firestore
         .collection('likes')
         .where('userId', isEqualTo: itemOwnerId)
         .where('itemId', whereIn: myItemIds)
         .get();
+    
+    if (kDebugMode) print('Found ${ownerLikes.docs.length} likes from $itemOwnerId on my items');
 
     // If owner liked one of my items, create a match
     if (ownerLikes.docs.isNotEmpty) {
       final matchId = uid.compareTo(itemOwnerId) < 0 ? '${uid}_$itemOwnerId' : '${itemOwnerId}_$uid';
+      final likedItemId = ownerLikes.docs.first.data()['itemId'] as String;
+      
       await _firestore.collection('matches').doc(matchId).set({
         'users': [uid, itemOwnerId],
-        'itemId': itemId,
-        'matchedItemId': ownerLikes.docs.first.data()['itemId'],
+        'itemId': itemId, // The item I liked
+        'matchedItemId': likedItemId, // The item they liked of mine
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
+      
+      if (kDebugMode) print('Match created! They liked $likedItemId, I liked $itemId');
     }
   }
 
@@ -150,6 +213,12 @@ class FirebaseService extends ChangeNotifier {
       if (kDebugMode) print('Error getting user profile: $e');
       return null;
     }
+  }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
+    notifyListeners();
+    if (kDebugMode) print('User signed out');
   }
 
   Future<void> updateTrustScore(String userId, double rating) async {

@@ -1,3 +1,4 @@
+import 'package:amc/models/user_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -60,33 +61,70 @@ class MatchesScreen extends StatelessWidget {
                 orElse: () => 'unknown',
               );
 
-              return FutureBuilder(
-                future: service.getUserProfile(otherUserId),
-                builder: (context, profileSnap) {
-                  final profile = profileSnap.data;
+              final itemId = match['itemId'] as String?;
+              final matchedItemId = match['matchedItemId'] as String?;
+              
+              return FutureBuilder<List<dynamic>>(
+                future: Future.wait<dynamic>([
+                  service.getUserProfile(otherUserId),
+                  itemId != null ? service.getItem(itemId) : Future.value(null),
+                ]),
+                builder: (context, AsyncSnapshot<List<dynamic>> profileSnap) {
+                  final profile = profileSnap.data?[0] as UserProfile?;
+                  final itemData = profileSnap.data?[1] as Map<String, dynamic>?;
                   final displayName = profile?.displayName ?? 'User $otherUserId';
                   final trustScore = profile?.trustScore ?? 5.0;
+                  final itemTitle = itemData?['title'] as String? ?? 'Unknown Item';
 
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         child: Text(
                           displayName[0].toUpperCase(),
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: Theme.of(context).scaffoldBackgroundColor),
                         ),
                       ),
                       title: Text(displayName),
-                      subtitle: Row(
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star, size: 16, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text('${trustScore.toStringAsFixed(1)} Trust Score'),
-                          const SizedBox(width: 16),
-                          Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
-                          const SizedBox(width: 4),
-                          Text('${profile?.completedTrades ?? 0} trades'),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.inventory_2, size: 14, color: Theme.of(context).colorScheme.secondary),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  itemTitle,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.secondary,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star, size: 14, color: Colors.amber),
+                                const SizedBox(width: 2),
+                                Text('${trustScore.toStringAsFixed(1)}', style: const TextStyle(fontSize: 11)),
+                                const SizedBox(width: 12),
+                                Icon(Icons.check_circle, size: 14, color: Colors.green[600]),
+                                const SizedBox(width: 2),
+                                Text('${profile?.completedTrades ?? 0}', style: const TextStyle(fontSize: 11)),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       trailing: const Icon(Icons.chat_bubble_outline),
@@ -99,6 +137,8 @@ class MatchesScreen extends StatelessWidget {
                               otherUserId: otherUserId,
                               otherUserName: displayName,
                               trustScore: trustScore,
+                              itemId: itemId,
+                              matchedItemId: matchedItemId,
                             ),
                           ),
                         );

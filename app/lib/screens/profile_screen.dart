@@ -1,10 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/firebase_service.dart';
+import '../services/seed_service.dart';
 import '../models/user_profile.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final SeedService _seedService = SeedService();
+  bool _isSeeding = false;
+
+  Future<void> _seedDatabase() async {
+    setState(() => _isSeeding = true);
+    try {
+      final service = Provider.of<FirebaseService>(context, listen: false);
+      await _seedService.seedDatabase(service.user?.uid ?? 'unknown');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Database seeded with sample items and matches!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error seeding: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSeeding = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,30 +134,54 @@ class ProfileScreen extends StatelessWidget {
                   _buildSettingsTile(icon: Icons.info_outline, title: 'About', subtitle: 'Bartr v1.0.0', onTap: () {}),
                   const SizedBox(height: 16),
                   _buildSettingsTile(
+                    icon: _isSeeding ? Icons.hourglass_empty : Icons.science,
+                    title: 'Seed Database',
+                    subtitle: 'Add sample items for testing',
+                    iconColor: Theme.of(context).colorScheme.secondary,
+                    onTap: _isSeeding ? () {} : _seedDatabase,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSettingsTile(
                     icon: Icons.logout,
-                    title: 'Sign Out',
-                    iconColor: Colors.red,
-                    titleColor: Colors.red,
+                    title: 'Change User',
+                    subtitle: 'Sign out and create new account',
+                    iconColor: Theme.of(context).colorScheme.secondary,
                     onTap: () async {
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Sign Out'),
-                          content: const Text('Are you sure you want to sign out?'),
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          title: Text('Change User', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                          content: Text(
+                            'Sign out and create a new anonymous account with a fresh starter item?',
+                            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                          ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                            ),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
-                              style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: const Text('Sign Out'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Theme.of(context).colorScheme.secondary,
+                              ),
+                              child: const Text('Change User'),
                             ),
                           ],
                         ),
                       );
 
-                      if (confirm == true) {
-                        // Sign out logic would go here
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Signed out')));
+                      if (confirm == true && mounted) {
+                        await firebaseService.signOut();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Signed out! Restart app to create new user.'),
+                              backgroundColor: Theme.of(context).colorScheme.secondary,
+                            ),
+                          );
+                        }
                       }
                     },
                   ),

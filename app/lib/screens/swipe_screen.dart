@@ -5,7 +5,6 @@ import 'package:vibration/vibration.dart';
 
 import '../models/item.dart';
 import '../services/firebase_service.dart';
-import '../services/seed_service.dart';
 
 class SwipeScreen extends StatefulWidget {
   const SwipeScreen({super.key});
@@ -16,34 +15,11 @@ class SwipeScreen extends StatefulWidget {
 
 class _SwipeScreenState extends State<SwipeScreen> {
   final CardSwiperController controller = CardSwiperController();
-  final SeedService _seedService = SeedService();
-  bool _isSeeding = false;
 
   Color _getTrustColor(double score) {
     if (score >= 8.0) return Colors.green;
     if (score >= 6.0) return Colors.orange;
     return Colors.red;
-  }
-
-  Future<void> _seedDatabase() async {
-    setState(() => _isSeeding = true);
-    try {
-      final service = Provider.of<FirebaseService>(context, listen: false);
-      await _seedService.seedDatabase(service.user?.uid ?? 'unknown');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Database seeded with sample items!'), duration: Duration(seconds: 2)),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error seeding: $e'), backgroundColor: Colors.red));
-      }
-    } finally {
-      if (mounted) setState(() => _isSeeding = false);
-    }
   }
 
   @override
@@ -83,19 +59,6 @@ class _SwipeScreenState extends State<SwipeScreen> {
           ],
         ),
         centerTitle: true,
-        actions: [
-          if (_isSeeding)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.scatter_plot, color: Colors.grey),
-              tooltip: 'Seed Database',
-              onPressed: _seedDatabase,
-            ),
-        ],
       ),
       body: StreamBuilder<List<Item>>(
         stream: service.streamItems(),
@@ -116,7 +79,7 @@ class _SwipeScreenState extends State<SwipeScreen> {
                     const Text('No items yet!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Text(
-                      'Tap the seed button (⚛️) to add sample items\nor the + button to create your own',
+                      'No items available for trading\nCreate your own or seed sample data from Profile',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600]),
                     ),
