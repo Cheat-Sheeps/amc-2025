@@ -32,9 +32,12 @@ class MyListingsScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: false,
       ),
-      body: StreamBuilder<List<Item>>(
-        stream: firebaseService.streamUserItems(),
-        builder: (context, snapshot) {
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: StreamBuilder<List<Item>>(
+            stream: firebaseService.streamUserItems(),
+            builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -170,10 +173,12 @@ class MyListingsScreen extends StatelessWidget {
                 ),
               );
             },
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton.small(
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,

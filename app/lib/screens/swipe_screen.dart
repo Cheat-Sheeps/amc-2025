@@ -131,7 +131,16 @@ class _SwipeScreenState extends State<SwipeScreen> {
           }
 
           return Column(
-            children: [Expanded(child: Center(child: cardSwiper(items, service, context)))],
+            children: [
+              Expanded(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: cardSwiper(items, service, context),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),

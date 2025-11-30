@@ -420,15 +420,20 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Hide matched items header when keyboard is visible
-          if (MediaQuery.of(context).viewInsets.bottom == 0)
-            _buildMatchedItemsHeader(service),
-          Expanded(
-            child: StreamBuilder<List<model.ChatMessage>>(
-              stream: service.streamMessages(widget.matchId),
-              builder: (context, snapshot) {
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              children: [
+                // Hide matched items header when keyboard is visible
+                if (MediaQuery.of(context).viewInsets.bottom == 0)
+                  _buildMatchedItemsHeader(service),
+                Expanded(
+                  child: StreamBuilder<List<model.ChatMessage>>(
+                    stream: service.streamMessages(widget.matchId),
+                    builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
