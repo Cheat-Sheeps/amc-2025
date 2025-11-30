@@ -101,6 +101,21 @@ class FirebaseService extends ChangeNotifier {
         .map((snap) => snap.docs.map((d) => Item.fromDoc(d)).toList());
   }
 
+  // Fetch items for a specific user (for the profile view)
+  Future<List<Item>> getItemsForUser(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('items')
+          .where('ownerId', isEqualTo: userId)
+          .get();
+      
+      return snapshot.docs.map((d) => Item.fromDoc(d)).toList();
+    } catch (e) {
+      if (kDebugMode) print('Error fetching user items: $e');
+      return [];
+    }
+  }
+
   Future<String?> uploadImage(dynamic fileOrBytes, String path) async {
     final ref = _storage.ref().child(path);
     UploadTask upload;
