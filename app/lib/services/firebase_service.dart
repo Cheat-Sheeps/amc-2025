@@ -244,6 +244,14 @@ class FirebaseService extends ChangeNotifier {
     _profileCacheTime.clear();
   }
 
+  Future<void> updateUserProfile(String userId, {String? displayName}) async {
+    final updates = <String, dynamic>{};
+    if (displayName != null) updates['displayName'] = displayName;
+    if (updates.isNotEmpty) {
+      await _firestore.collection('users').doc(userId).update(updates);
+    }
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
     notifyListeners();

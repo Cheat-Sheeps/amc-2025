@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -11,16 +13,18 @@ import 'screens/list_item_screen.dart';
 import 'screens/matches_screen.dart';
 import 'screens/my_listings_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/chat_screen.dart';
+import 'models/chat_message.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Lock orientation to portrait
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -170,12 +174,138 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
+  // Notification State
+  StreamSubscription? _matchesSubscription;
+  final Map<String, StreamSubscription> _messageSubscriptions = {};
+  final Set<String> _processedMessageIds = {};
+  final DateTime _startTime = DateTime.now();
+
   final List<Widget> _screens = [
     const SwipeScreen(),
     const MatchesScreen(),
     const MyListingsScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Setup listeners after frame to ensure Provider is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupNotificationListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _matchesSubscription?.cancel();
+    for (var sub in _messageSubscriptions.values) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
+
+  void _setupNotificationListeners() {
+    final service = Provider.of<FirebaseService>(context, listen: false);
+
+    _matchesSubscription = service.streamMatches().listen((matches) {
+      for (final match in matches) {
+        final matchId = match['id'] as String;
+        // If we haven't subscribed to this match's messages yet
+        if (!_messageSubscriptions.containsKey(matchId)) {
+          _messageSubscriptions[matchId] = service.streamMessages(matchId).listen((messages) {
+            if (messages.isNotEmpty) {
+              final lastMsg = messages.last;
+
+              // Logic:
+              // 1. Message must be received AFTER this app session started (don't notify for old history)
+              // 2. Message sender must NOT be the current user
+              // 3. Message must not have been processed/notified already in this session
+              if (lastMsg.timestamp.isAfter(_startTime) &&
+                  lastMsg.senderId != service.user?.uid &&
+                  !_processedMessageIds.contains(lastMsg.id)) {
+
+                _processedMessageIds.add(lastMsg.id);
+                _showNotification(match, lastMsg);
+              }
+            }
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _showNotification(Map<String, dynamic> match, ChatMessage message) async {
+    if (!mounted) return;
+
+    final service = Provider.of<FirebaseService>(context, listen: false);
+    final users = (match['users'] as List<dynamic>?) ?? [];
+    final otherUserId = users.firstWhere((id) => id != service.user?.uid, orElse: () => 'unknown');
+
+    final profile = await service.getUserProfile(otherUserId);
+    final displayName = profile?.displayName ?? 'Survivor';
+
+    if (!mounted) return;
+
+    // notif
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 4,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.chat_bubble, color: Theme.of(context).colorScheme.primary),
+        ),
+        content: Text(
+          '> $displayName: ${message.text}',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+            },
+            child: Text('DISMISS', style: TextStyle(color: Colors.grey[500])),
+          ),
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatScreen(
+                    matchId: match['id'],
+                    otherUserId: otherUserId,
+                    otherUserName: displayName,
+                    trustScore: profile?.trustScore ?? 5.0,
+                    itemId: match['itemId'],
+                    matchedItemId: match['matchedItemId'],
+                  ),
+                ),
+              );
+            },
+            child: Text('REPLY', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+          ),
+        ],
+      ),
+    );
+
+    // auto hide stuff
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

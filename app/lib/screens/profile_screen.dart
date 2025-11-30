@@ -39,6 +39,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _editProfile(UserProfile? profile) {
+    final TextEditingController controller = TextEditingController(text: profile?.displayName ?? '');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: Text('Edit Profile', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: 'Display Name',
+            labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
+            border: OutlineInputBorder(),
+          ),
+          style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty) {
+                try {
+                  final service = Provider.of<FirebaseService>(context, listen: false);
+                  await service.updateUserProfile(profile!.id, displayName: newName);
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Profile updated!')),
+                    );
+                    // Refresh the screen
+                    setState(() {});
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error updating profile: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              }
+            },
+            child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final firebaseService = Provider.of<FirebaseService>(context);
@@ -121,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 32),
 
                   // Settings List
-                  _buildSettingsTile(icon: Icons.person_outline, title: 'Edit Profile', onTap: () {}),
+                  _buildSettingsTile(icon: Icons.person_outline, title: 'Edit Profile', onTap: () => _editProfile(profile)),
                   _buildSettingsTile(
                     icon: Icons.location_on_outlined,
                     title: 'Location Settings',
