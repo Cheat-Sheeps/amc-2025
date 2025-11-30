@@ -39,56 +39,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _editProfile(UserProfile? profile) {
-    final TextEditingController controller = TextEditingController(text: profile?.displayName ?? '');
-    showDialog(
+  Future<void> _editProfile(UserProfile? profile) async {
+    if (profile == null) return;
+    
+    final newName = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Text('Edit Profile', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: 'Display Name',
-            labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
-            border: OutlineInputBorder(),
-          ),
-          style: TextStyle(color: Theme.of(context).colorScheme.primary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                try {
-                  final service = Provider.of<FirebaseService>(context, listen: false);
-                  await service.updateUserProfile(profile!.id, displayName: newName);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Profile updated!')),
-                    );
-                    // Refresh the screen
-                    setState(() {});
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error updating profile: $e'), backgroundColor: Colors.red),
-                    );
-                  }
-                }
-              }
-            },
-            child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
-          ),
-        ],
-      ),
+      builder: (dialogContext) => _EditProfileDialog(initialName: profile.displayName ?? ''),
     );
+    
+    if (newName != null && newName.isNotEmpty && mounted) {
+      try {
+        final service = Provider.of<FirebaseService>(context, listen: false);
+        await service.updateUserProfile(profile.id, displayName: newName);
+        
+        // Clear cache to force refresh
+        service.clearProfileCache();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Profile updated!'),
+              backgroundColor: Theme.of(context).colorScheme.secondary,
+            ),
+          );
+          // Refresh the screen
+          setState(() {});
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error updating profile: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -311,5 +298,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (score >= 8.0) return Colors.green;
     if (score >= 6.0) return Colors.orange;
     return Colors.red;
+  }
+}
+
+class _EditProfileDialog extends StatefulWidget {
+  final String initialName;
+
+  const _EditProfileDialog({required this.initialName});
+
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      title: Text('Edit Profile', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        autocorrect: false,
+        keyboardType: TextInputType.name,
+        decoration: InputDecoration(
+          labelText: 'Display Name',
+          labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary),
+          border: OutlineInputBorder(),
+        ),
+        style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        onSubmitted: (value) {
+          if (value.trim().isNotEmpty) {
+            Navigator.of(context).pop(value.trim());
+          }
+        },
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+        ),
+        TextButton(
+          onPressed: () {
+            final newName = _controller.text.trim();
+            if (newName.isNotEmpty) {
+              Navigator.of(context).pop(newName);
+            }
+          },
+          child: Text('Save', style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+        ),
+      ],
+    );
   }
 }
