@@ -262,7 +262,10 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
           children: [
             // Hide matched items header when keyboard is visible
             if (MediaQuery.of(context).viewInsets.bottom == 0)
@@ -347,7 +350,9 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     ));
   }

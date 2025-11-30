@@ -116,8 +116,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final totalRatings = profile?.totalRatings ?? 0;
 
             return SingleChildScrollView(
-              child: Column(
-                children: [
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Column(
+                    children: [
                   const SizedBox(height: 20),
                   // Profile Header
                   CircleAvatar(
@@ -237,8 +240,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                     },
                   ),
-                  const SizedBox(height: 40),
-                ],
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
               ),
             );
           },

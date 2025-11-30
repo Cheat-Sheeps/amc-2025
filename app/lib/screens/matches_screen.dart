@@ -49,10 +49,13 @@ class MatchesScreen extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
-            itemCount: matches.length,
-            padding: const EdgeInsets.all(8),
-            itemBuilder: (context, index) {
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: ListView.builder(
+                itemCount: matches.length,
+                padding: const EdgeInsets.all(8),
+                itemBuilder: (context, index) {
               final match = matches[index];
               final matchId = match['id'] as String;
               final users = (match['users'] as List<dynamic>?) ?? [];
@@ -147,7 +150,9 @@ class MatchesScreen extends StatelessWidget {
                   );
                 },
               );
-            },
+                },
+              ),
+            ),
           );
         },
       ),
