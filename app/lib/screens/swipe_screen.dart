@@ -197,7 +197,9 @@ class _SwipeScreenState extends State<SwipeScreen> {
   }
 
   CardSwiper cardSwiper(List<Item> items, FirebaseService service, BuildContext context) {
+    const int thresholdPercent = 50; // percent of card width used by CardSwiper.threshold
     return CardSwiper(
+      threshold: thresholdPercent,
       controller: controller,
       cardsCount: items.length,
       allowedSwipeDirection: AllowedSwipeDirection.only(left: true, right: true),
@@ -249,217 +251,304 @@ class _SwipeScreenState extends State<SwipeScreen> {
               item.longitude,
             );
 
-            return Card(
-              elevation: 8,
-              shadowColor: Colors.black.withOpacity(0.3),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: item.imageUrl != null
-                              ? Image.network(
-                                  item.imageUrl!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                )
-                              : Container(color: Colors.grey[300], child: const Icon(Icons.image, size: 64)),
-                        ),
-                        // Gradient overlay at bottom
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            height: 300,
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Colors.black.withOpacity(.9)],
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (distance != null)
-                          Positioned(
-                            top: 16,
-                            left: 16,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
-                                boxShadow: [
-                                  BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.location_on, size: 14, color: Theme.of(context).colorScheme.primary),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${distance.toStringAsFixed(1)} km',
-                                    style: const TextStyle(
-                                      color: Color(0xFFFFFFFF),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        // Item info overlay at bottom
-                        Positioned(
-                          bottom: 20,
-                          left: 16,
-                          right: 16,
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      item.title,
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item.description,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: _getTrustColor(trustScore), width: 1),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: _getTrustColor(trustScore).withOpacity(0.3),
-                                                blurRadius: 8,
-                                                spreadRadius: 1,
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.person, size: 14, color: _getTrustColor(trustScore)),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                ownerProfile?.displayName ?? 'User',
-                                                style: TextStyle(
-                                                  color: _getTrustColor(trustScore),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: _getTrustColor(trustScore), width: 1),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: _getTrustColor(trustScore).withOpacity(0.3),
-                                                blurRadius: 8,
-                                                spreadRadius: 1,
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.verified_user, size: 14, color: _getTrustColor(trustScore)),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                '${trustScore.toStringAsFixed(1)}',
-                                                style: TextStyle(
-                                                  color: _getTrustColor(trustScore),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: Theme.of(context).colorScheme.surface,
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: Theme.of(context).colorScheme.secondary, width: 1),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
-                                                blurRadius: 8,
-                                                spreadRadius: 1,
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.handshake, size: 14, color: Theme.of(context).colorScheme.secondary),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                '$completedTrades',
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.secondary,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              _buildActionButtons(items),
-                            ],
-                          ),
-                        ),
-                      ],
+            // compute swipe progress from the provided percent threshold parameter
+            // percentThresholdX is positive when swiping right (accept) and negative when swiping left (reject)
+            // percentThresholdX is provided as an integer percent (e.g. 25 = 25%).
+            // The package computes it as roughly proportional to the horizontal pixel offset
+            // (see CardSwiper internals). To avoid immediate strong values for small drags,
+            // compute a normalized progress relative to the screen width instead. This maps
+            // small pixel movements to tiny progress values and large moves closer to 1.0.
+            final double percent = percentThresholdX.toDouble();
+            final double screenWidth = MediaQuery.of(context).size.width;
+            // The package reports percentThresholdX = (100 * left / threshold), so to recover
+            // the horizontal pixel offset (left) we do: left = percent * threshold / 100.
+            final double leftPixels = (percent * thresholdPercent / 100.0);
+            // normalized in 0..1 range based on pixel offset vs screen width
+            final double rawAbs = (leftPixels.abs() / screenWidth).clamp(0.0, 1.0);
+            // keep the sign for color/icon placement
+            final bool isPositive = leftPixels >= 0;
+
+            // Map rawAbs through a larger dead-zone first (linear), then apply an ease curve for smoothness.
+            // This ensures the tint only begins when the user has swiped a substantial amount.
+            const double fadeStart = 0.20; // require at least 50% raw movement before any tint
+            const double fadeEnd = 0.80; // reach full mapped value very close to the edge
+
+            double mappedLinear = 0.0;
+            if (rawAbs <= fadeStart) {
+              mappedLinear = 0.0;
+            } else if (rawAbs >= fadeEnd) {
+              mappedLinear = 1.0;
+            } else {
+              mappedLinear = (rawAbs - fadeStart) / (fadeEnd - fadeStart);
+            }
+
+            // apply an ease-out curve to the mapped linear value for a nicer feel
+            final double mapped = Curves.easeOut.transform(mappedLinear);
+
+            final Color swipeColor = isPositive ? Colors.green : Colors.red;
+            // cap the final overlay opacity (tunable)
+            const double maxOverlayOpacity = 0.78;
+            final double overlayOpacity = (mapped * maxOverlayOpacity).clamp(0.0, 0.85);
+
+            // We'll only show the floating icon when the mapped progress is above a medium threshold
+            final double iconVisibilityThreshold = 0.12;
+
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // the main card
+                Card(
+                   elevation: 8,
+                   shadowColor: Colors.black.withOpacity(0.3),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.stretch,
+                     children: [
+                       Expanded(
+                         child: Stack(
+                           children: [
+                             ClipRRect(
+                               borderRadius: BorderRadius.circular(24),
+                               child: item.imageUrl != null
+                                   ? Image.network(
+                                       item.imageUrl!,
+                                       fit: BoxFit.cover,
+                                       width: double.infinity,
+                                       height: double.infinity,
+                                     )
+                                   : Container(color: Colors.grey[300], child: const Icon(Icons.image, size: 64)),
+                             ),
+                             // Gradient overlay at bottom
+                             Positioned(
+                               bottom: 0,
+                               left: 0,
+                               right: 0,
+                               child: Container(
+                                 height: 300,
+                                 decoration: BoxDecoration(
+                                   borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+                                   gradient: LinearGradient(
+                                     begin: Alignment.topCenter,
+                                     end: Alignment.bottomCenter,
+                                     colors: [Colors.transparent, Colors.black.withOpacity(.9)],
+                                   ),
+                                 ),
+                               ),
+                             ),
+                             if (distance != null)
+                               Positioned(
+                                 top: 16,
+                                 left: 16,
+                                 child: Container(
+                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                   decoration: BoxDecoration(
+                                     color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                                     borderRadius: BorderRadius.circular(20),
+                                     border: Border.all(color: Theme.of(context).colorScheme.primary, width: 1),
+                                     boxShadow: [
+                                       BoxShadow(color: Theme.of(context).colorScheme.primary.withOpacity(0.3), blurRadius: 8, spreadRadius: 1),
+                                     ],
+                                   ),
+                                   child: Row(
+                                     mainAxisSize: MainAxisSize.min,
+                                     children: [
+                                       Icon(Icons.location_on, size: 14, color: Theme.of(context).colorScheme.primary),
+                                       const SizedBox(width: 4),
+                                       Text(
+                                         '${distance.toStringAsFixed(1)} km',
+                                         style: const TextStyle(
+                                           color: Color(0xFFFFFFFF),
+                                           fontWeight: FontWeight.bold,
+                                           fontSize: 11,
+                                         ),
+                                       ),
+                                     ],
+                                   ),
+                                 ),
+                               ),
+                             // Item info overlay at bottom
+                             Positioned(
+                               bottom: 20,
+                               left: 16,
+                               right: 16,
+                               child: Row(
+                                 crossAxisAlignment: CrossAxisAlignment.end,
+                                 children: [
+                                   Expanded(
+                                     child: Column(
+                                       crossAxisAlignment: CrossAxisAlignment.start,
+                                       mainAxisSize: MainAxisSize.min,
+                                       children: [
+                                         Text(
+                                           item.title,
+                                           style: const TextStyle(
+                                             fontSize: 28,
+                                             fontWeight: FontWeight.bold,
+                                             color: Colors.white,
+                                             shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                                           ),
+                                         ),
+                                         const SizedBox(height: 4),
+                                         Text(
+                                           item.description,
+                                           maxLines: 2,
+                                           overflow: TextOverflow.ellipsis,
+                                           style: const TextStyle(
+                                             color: Colors.white,
+                                             fontSize: 14,
+                                             shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                                           ),
+                                         ),
+                                         const SizedBox(height: 12),
+                                         Row(
+                                           children: [
+                                             Container(
+                                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                               decoration: BoxDecoration(
+                                                 color: Theme.of(context).colorScheme.surface,
+                                                 borderRadius: BorderRadius.circular(20),
+                                                 border: Border.all(color: _getTrustColor(trustScore), width: 1),
+                                                 boxShadow: [
+                                                   BoxShadow(
+                                                     color: _getTrustColor(trustScore).withOpacity(0.3),
+                                                     blurRadius: 8,
+                                                     spreadRadius: 1,
+                                                   ),
+                                                 ],
+                                               ),
+                                               child: Row(
+                                                 mainAxisSize: MainAxisSize.min,
+                                                 children: [
+                                                   Icon(Icons.person, size: 14, color: _getTrustColor(trustScore)),
+                                                   const SizedBox(width: 4),
+                                                   Text(
+                                                     ownerProfile?.displayName ?? 'User',
+                                                     style: TextStyle(
+                                                       color: _getTrustColor(trustScore),
+                                                       fontWeight: FontWeight.bold,
+                                                       fontSize: 12,
+                                                     ),
+                                                   ),
+                                                 ],
+                                               ),
+                                             ),
+                                             const SizedBox(width: 8),
+                                             Container(
+                                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                               decoration: BoxDecoration(
+                                                 color: Theme.of(context).colorScheme.surface,
+                                                 borderRadius: BorderRadius.circular(20),
+                                                 border: Border.all(color: _getTrustColor(trustScore), width: 1),
+                                                 boxShadow: [
+                                                   BoxShadow(
+                                                     color: _getTrustColor(trustScore).withOpacity(0.3),
+                                                     blurRadius: 8,
+                                                     spreadRadius: 1,
+                                                   ),
+                                                 ],
+                                               ),
+                                               child: Row(
+                                                 mainAxisSize: MainAxisSize.min,
+                                                 children: [
+                                                   Icon(Icons.verified_user, size: 14, color: _getTrustColor(trustScore)),
+                                                   const SizedBox(width: 4),
+                                                   Text(
+                                                     '${trustScore.toStringAsFixed(1)}',
+                                                     style: TextStyle(
+                                                       color: _getTrustColor(trustScore),
+                                                       fontWeight: FontWeight.bold,
+                                                       fontSize: 12,
+                                                     ),
+                                                   ),
+                                                 ],
+                                               ),
+                                             ),
+                                             const SizedBox(width: 8),
+                                             Container(
+                                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                               decoration: BoxDecoration(
+                                                 color: Theme.of(context).colorScheme.surface,
+                                                 borderRadius: BorderRadius.circular(20),
+                                                 border: Border.all(color: Theme.of(context).colorScheme.secondary, width: 1),
+                                                 boxShadow: [
+                                                   BoxShadow(
+                                                     color: Theme.of(context).colorScheme.secondary.withOpacity(0.3),
+                                                     blurRadius: 8,
+                                                     spreadRadius: 1,
+                                                   ),
+                                                 ],
+                                               ),
+                                               child: Row(
+                                                 mainAxisSize: MainAxisSize.min,
+                                                 children: [
+                                                   Icon(Icons.handshake, size: 14, color: Theme.of(context).colorScheme.secondary),
+                                                   const SizedBox(width: 4),
+                                                   Text(
+                                                     '$completedTrades',
+                                                     style: TextStyle(
+                                                       color: Theme.of(context).colorScheme.secondary,
+                                                       fontWeight: FontWeight.bold,
+                                                       fontSize: 12,
+                                                     ),
+                                                   ),
+                                                 ],
+                                               ),
+                                             ),
+                                           ],
+                                         ),
+                                       ],
+                                     ),
+                                   ),
+                                   _buildActionButtons(items),
+                                 ],
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),
+                     ],
+                   ),
+                 ),
+
+                // colored overlay that follows swipe progress
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        color: swipeColor.withOpacity(overlayOpacity),
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // floating accept/reject icon that fades and scales with mapped progress
+                if (mapped > iconVisibilityThreshold)
+                  Positioned(
+                    top: 32,
+                    // show the accept checkmark on the right when swiping right
+                    left: !isPositive ? 32 : null,
+                    right: isPositive ? 32 : null,
+                    child: Opacity(
+                      opacity: (mapped * 1.05).clamp(0.0, 1.0),
+                      child: Transform.scale(
+                        scale: 0.9 + (mapped * 0.6),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isPositive ? Icons.check : Icons.close,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         );
