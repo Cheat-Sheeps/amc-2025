@@ -14,7 +14,20 @@ class MatchesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Matches'),
+        title: Row(
+          children: [
+            Icon(Icons.people, color: Theme.of(context).colorScheme.primary, size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Matching offers',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ],
+        ),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: service.streamMatches(),
@@ -31,7 +44,7 @@ class MatchesScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.favorite_border, size: 80, color: Colors.grey[400]),
+                    Icon(Icons.handshake, size: 80, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     const Text(
                       'No matches yet',

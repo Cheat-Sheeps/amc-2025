@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dash_chat_2/dash_chat_2.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/firebase_service.dart';
 import '../models/chat_message.dart' as model;
+
+import 'other_user_profile_screen.dart'; 
 
 class ChatScreen extends StatefulWidget {
   final String matchId;
@@ -28,6 +31,28 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  void _acceptDeal(FirebaseService service) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Accept Deal'),
+        content: const Text('Are you sure you want to accept this deal? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await service.acceptDeal(widget.matchId);
+              Navigator.pop(context);
+            },
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _showRating() {
     showDialog(
@@ -96,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               bottom: BorderSide(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                color: Theme.of(context).colorScheme.primary.withAlpha(77),
                 width: 1,
               ),
             ),
@@ -156,7 +181,7 @@ class _ChatScreenState extends State<ChatScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.primary.withAlpha(77),
               width: 2,
             ),
           ),
@@ -202,7 +227,7 @@ class _ChatScreenState extends State<ChatScreen> {
           owner,
           style: TextStyle(
             fontSize: 10,
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.primary.withAlpha(178),
           ),
         ),
       ],
@@ -212,50 +237,79 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final service = Provider.of<FirebaseService>(context, listen: false);
-    final currentUser = ChatUser(
-      id: service.user?.uid ?? 'unknown',
-      firstName: 'You',
-    );
-    final otherUser = ChatUser(
-      id: widget.otherUserId,
-      firstName: widget.otherUserName,
-    );
+    final currentUser = ChatUser(id: service.user!.uid);
+    final otherUser = ChatUser(id: widget.otherUserId, firstName: widget.otherUserName);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '> ${widget.otherUserName.toUpperCase()}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontSize: 16,
-                letterSpacing: 1,
+        title: GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OtherUserProfileScreen(
+                userId: widget.otherUserId,
+                userName: widget.otherUserName,
+                trustScore: widget.trustScore,
               ),
             ),
-            Row(
-              children: [
-                Icon(Icons.star, size: 12, color: Theme.of(context).colorScheme.secondary),
-                const SizedBox(width: 4),
-                Text(
-                  '${widget.trustScore.toStringAsFixed(1)} TRUST',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.7),
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.person),
+              const SizedBox(width: 8),
+              Text(widget.otherUserName),
+            ],
+          ),
         ),
         actions: [
+          StreamBuilder<DocumentSnapshot>(
+            stream: service.streamMatch(widget.matchId),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const SizedBox.shrink();
+              }
+
+              final matchData = snapshot.data!.data() as Map<String, dynamic>?;
+              if (matchData == null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Deal completed! Offer and item for sale delisted.'),
+                      ),
+                    );
+                  }
+                });
+                return const SizedBox.shrink();
+              }
+
+              final acceptedBy = (matchData['acceptedBy'] as List<dynamic>?)?.cast<String>() ?? [];
+              final currentUserAccepted = acceptedBy.contains(service.user!.uid);
+              final otherUserAccepted = acceptedBy.contains(widget.otherUserId);
+
+              return Row(
+                children: [
+                  Icon(
+                    currentUserAccepted ? Icons.check_circle : Icons.check_circle_outline,
+                    color: currentUserAccepted ? Colors.green : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    otherUserAccepted ? Icons.check_circle : Icons.check_circle_outline,
+                    color: otherUserAccepted ? Colors.green : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              );
+            },
+          ),
           IconButton(
-            icon: Icon(Icons.rate_review, color: Theme.of(context).colorScheme.primary),
-            tooltip: 'Rate User',
+            icon: const Icon(Icons.handshake),
+            onPressed: () => _acceptDeal(service),
+          ),
+          IconButton(
+            icon: const Icon(Icons.star),
             onPressed: _showRating,
           ),
         ],
@@ -266,14 +320,14 @@ class _ChatScreenState extends State<ChatScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
-          children: [
-            // Hide matched items header when keyboard is visible
-            if (MediaQuery.of(context).viewInsets.bottom == 0)
-              _buildMatchedItemsHeader(service),
-            Expanded(
-              child: StreamBuilder<List<model.ChatMessage>>(
-                stream: service.streamMessages(widget.matchId),
-                builder: (context, snapshot) {
+              children: [
+                // Hide matched items header when keyboard is visible
+                if (MediaQuery.of(context).viewInsets.bottom == 0)
+                  _buildMatchedItemsHeader(service),
+                Expanded(
+                  child: StreamBuilder<List<model.ChatMessage>>(
+                    stream: service.streamMessages(widget.matchId),
+                    builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
@@ -282,7 +336,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   );
                 }
-                
+
                 final messages = (snapshot.data ?? []).map((msg) {
                   return ChatMessage(
                     user: msg.senderId == currentUser.id ? currentUser : otherUser,
@@ -309,7 +363,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     inputDecoration: InputDecoration(
                       hintText: '> TYPE MESSAGE...',
                       hintStyle: TextStyle(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        color: Theme.of(context).colorScheme.primary.withAlpha(128),
                         letterSpacing: 1,
                       ),
                       border: OutlineInputBorder(
@@ -321,7 +375,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                         borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                          color: Theme.of(context).colorScheme.primary.withAlpha(77),
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -347,13 +401,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                   ),
                 );
-              },
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-            ],
           ),
         ),
       ),
-    ));
+    );
   }
 }
