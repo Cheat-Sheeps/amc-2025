@@ -66,10 +66,13 @@ class FirebaseService extends ChangeNotifier {
     final uid = user!.uid;
     return _firestore.collection('items').snapshots().map((snap) {
       // Filter out current user's own items
-      return snap.docs
+      final items = snap.docs
           .where((d) => d.data()['ownerId'] != uid)
           .map((d) => Item.fromDoc(d))
           .toList();
+      // Randomize the order
+      items.shuffle();
+      return items;
     });
   }
 
