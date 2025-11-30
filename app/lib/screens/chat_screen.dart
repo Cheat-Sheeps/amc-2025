@@ -5,8 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../services/firebase_service.dart';
 import '../models/chat_message.dart' as model;
+import '../models/user_profile.dart';
 
-import 'other_user_profile_screen.dart'; 
+import 'other_user_profile_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String matchId;
@@ -69,7 +70,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: List.generate(5, (index) {
                 final rating = index + 1;
                 return IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.star,
                     color: Colors.amber,
                     size: 32,
@@ -94,6 +95,157 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDealStatusFooter(FirebaseService service) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: service.streamMatch(widget.matchId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        final matchData = snapshot.data!.data() as Map<String, dynamic>?;
+        if (matchData == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Deal completed! Offer and item for sale delisted.'),
+                ),
+              );
+              Navigator.pop(context);
+            }
+          });
+          return const SizedBox.shrink();
+        }
+
+        final acceptedBy = (matchData['acceptedBy'] as List<dynamic>?)?.cast<String>() ?? [];
+        final currentUserAccepted = acceptedBy.contains(service.user!.uid);
+        final otherUserAccepted = acceptedBy.contains(widget.otherUserId);
+
+        return FutureBuilder<List<UserProfile?>>(
+          future: Future.wait<UserProfile?>([
+            service.getUserProfile(service.user!.uid),
+            service.getUserProfile(widget.otherUserId),
+          ]),
+          builder: (context, profileSnapshot) {
+            if (!profileSnapshot.hasData) {
+              return const SizedBox.shrink();
+            }
+            final myProfile = profileSnapshot.data?[0];
+            final otherProfile = profileSnapshot.data?[1];
+
+            final distance = service.calculateDistance(
+              myProfile?.latitude,
+              myProfile?.longitude,
+              otherProfile?.latitude,
+              otherProfile?.longitude,
+            );
+
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.primary.withAlpha(77),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatusIndicator(
+                      title: 'You',
+                      subtitle: currentUserAccepted ? '(accepted)' : '(click to accept)',
+                      isAccepted: currentUserAccepted,
+                      onTap: currentUserAccepted ? null : () => _acceptDeal(service),
+                    ),
+                  ),
+                  _buildDistanceIndicator(distance),
+                  Expanded(
+                    child: _buildStatusIndicator(
+                      title: widget.otherUserName,
+                      subtitle: otherUserAccepted ? '(accepted)' : '(not accepted)',
+                      isAccepted: otherUserAccepted,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusIndicator({
+    required String title,
+    required String subtitle,
+    required bool isAccepted,
+    VoidCallback? onTap,
+  }) {
+    final bool isInteractive = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAccepted ? Icons.check_circle : Icons.check_circle_outline,
+            color: isAccepted
+                ? Colors.green
+                : (isInteractive ? Theme.of(context).colorScheme.secondary : Colors.grey),
+            size: 32,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isInteractive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10,
+              color: isInteractive
+                  ? Theme.of(context).colorScheme.secondary
+                  : Theme.of(context).colorScheme.primary.withAlpha(180),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDistanceIndicator(double? distance) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.swap_horiz,
+          color: Theme.of(context).colorScheme.secondary,
+          size: 32,
+        ),
+        const SizedBox(height: 4),
+        if (distance != null)
+          Text(
+            '${distance.toStringAsFixed(1)} km',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+          ),
+      ],
     );
   }
 
@@ -151,7 +303,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(width: 12),
                   // Arrow
                   Icon(
-                    Icons.swap_horiz,
+                    Icons.handshake,
                     color: Theme.of(context).colorScheme.secondary,
                     size: 32,
                   ),
@@ -262,52 +414,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         actions: [
-          StreamBuilder<DocumentSnapshot>(
-            stream: service.streamMatch(widget.matchId),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const SizedBox.shrink();
-              }
-
-              final matchData = snapshot.data!.data() as Map<String, dynamic>?;
-              if (matchData == null) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Deal completed! Offer and item for sale delisted.'),
-                      ),
-                    );
-                  }
-                });
-                return const SizedBox.shrink();
-              }
-
-              final acceptedBy = (matchData['acceptedBy'] as List<dynamic>?)?.cast<String>() ?? [];
-              final currentUserAccepted = acceptedBy.contains(service.user!.uid);
-              final otherUserAccepted = acceptedBy.contains(widget.otherUserId);
-
-              return Row(
-                children: [
-                  Icon(
-                    currentUserAccepted ? Icons.check_circle : Icons.check_circle_outline,
-                    color: currentUserAccepted ? Colors.green : Colors.grey,
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    otherUserAccepted ? Icons.check_circle : Icons.check_circle_outline,
-                    color: otherUserAccepted ? Colors.green : Colors.grey,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.handshake),
-            onPressed: () => _acceptDeal(service),
-          ),
           IconButton(
             icon: const Icon(Icons.star),
             onPressed: _showRating,
@@ -399,6 +505,7 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
+          _buildDealStatusFooter(service),
         ],
       ),
     );
