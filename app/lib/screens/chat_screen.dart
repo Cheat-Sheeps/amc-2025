@@ -28,6 +28,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+
   void _showRating() {
     showDialog(
       context: context,
