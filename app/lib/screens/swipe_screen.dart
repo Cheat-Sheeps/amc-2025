@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:provider/provider.dart';
 import 'package:vibration/vibration.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/item.dart';
 import '../services/firebase_service.dart';
@@ -20,6 +21,26 @@ class _SwipeScreenState extends State<SwipeScreen> {
     if (score >= 8.0) return Colors.green;
     if (score >= 6.0) return Colors.orange;
     return Colors.red;
+  }
+
+  bool get _vibrationAvailableOnPlatform {
+    // Only attempt to use the vibration plugin on Android or iOS (not on web or desktop)
+    if (kIsWeb) return false;
+    return (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+  }
+
+  // Centralized safe vibration helper. All vibration requests should go through this
+  // to avoid calling platform channels on unsupported platforms (desktop/web)
+  Future<void> _tryVibrate({int duration = 50, int amplitude = 128}) async {
+    if (!_vibrationAvailableOnPlatform) return;
+    try {
+      final has = await Vibration.hasVibrator();
+      if (has == true) {
+        await Vibration.vibrate(duration: duration, amplitude: amplitude);
+      }
+    } catch (e) {
+      // Ignore any errors from the vibration plugin (e.g. MissingPluginException)
+    }
   }
 
   @override
@@ -109,13 +130,10 @@ class _SwipeScreenState extends State<SwipeScreen> {
             iconColor: Colors.grey,
             size: 48,
             onPressed: () async {
-              try {
-                if (await Vibration.hasVibrator()) {
-                  // Sharp tap for reject
-                  Vibration.vibrate(duration: 40, amplitude: 255);
-                }
-              } catch (e) {
-                // Vibration not supported
+              // Only try vibration on mobile platforms where the plugin is supported
+              if (_vibrationAvailableOnPlatform) {
+                // Sharp tap for reject
+                await _tryVibrate(duration: 40, amplitude: 255);
               }
               controller.swipe(CardSwiperDirection.left);
             },
@@ -127,13 +145,10 @@ class _SwipeScreenState extends State<SwipeScreen> {
             iconColor: Theme.of(context).scaffoldBackgroundColor,
             size: 48,
             onPressed: () async {
-              try {
-                if (await Vibration.hasVibrator()) {
-                  // Satisfying buzz for like
-                  Vibration.vibrate(duration: 80, amplitude: 150);
-                }
-              } catch (e) {
-                // Vibration not supported
+              // Only try vibration on mobile platforms where the plugin is supported
+              if (_vibrationAvailableOnPlatform) {
+                // Satisfying buzz for like
+                await _tryVibrate(duration: 80, amplitude: 150);
               }
               controller.swipe(CardSwiperDirection.right);
             },
@@ -174,21 +189,19 @@ class _SwipeScreenState extends State<SwipeScreen> {
       cardsCount: items.length,
       allowedSwipeDirection: AllowedSwipeDirection.only(left: true, right: true),
       onSwipe: (previousIndex, currentIndex, direction) async {
-        // Trigger haptic feedback
-        try {
-            if (direction == CardSwiperDirection.right) {
-              // Smooth vibration for like (longer, satisfying)
-              Vibration.vibrate(duration: 100, amplitude: 128);
-            } else if (direction == CardSwiperDirection.left) {
-              // Sharp double tap for dislike
-              Vibration.vibrate(duration: 50, amplitude: 200);
-              await Future.delayed(const Duration(milliseconds: 100));
-              Vibration.vibrate(duration: 50, amplitude: 200);
+        // Trigger haptic feedback only on supported platforms
+        if (_vibrationAvailableOnPlatform) {
+          if (direction == CardSwiperDirection.right) {
+            // Smooth vibration for like (longer, satisfying)
+            await _tryVibrate(duration: 100, amplitude: 128);
+          } else if (direction == CardSwiperDirection.left) {
+            // Sharp double tap for dislike
+            await _tryVibrate(duration: 50, amplitude: 200);
+            await Future.delayed(const Duration(milliseconds: 100));
+            await _tryVibrate(duration: 50, amplitude: 200);
           }
-        } catch (e) {
-          // Vibration not supported, ignore
         }
-        
+
         if (direction == CardSwiperDirection.right) {
           final item = items[previousIndex];
           service.likeItem(item.id ?? '');
